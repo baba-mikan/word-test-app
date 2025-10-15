@@ -26,8 +26,8 @@ export default function LoginPage() {
 
       if (error) throw error
 
-      // ログイン成功
-      router.push('/dashboard')
+      // ログイン成功 - ルートページへリダイレクト
+      router.push('/')
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ログインに失敗しました')

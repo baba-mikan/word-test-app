@@ -1,6 +1,6 @@
 # Word Test App
 
-英単語テストシート作成アプリケーション（v1.0.0）
+英単語テストシート作成アプリケーション（v1.1.0）
 
 CSVファイルから英単語リストをインポートし、印刷用のテストシートを自動生成します。ユーザー認証とデータベース連携により、単語リストを保存・管理できます。
 
@@ -54,7 +54,6 @@ npm install
 3. 環境変数を設定
 
 `.env.local` ファイルを作成し、以下を記入：
-
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -71,7 +70,6 @@ Supabaseダッシュボードの SQL Editor で以下のテーブルを作成：
 詳細なSQL文は開発ドキュメントを参照してください。
 
 5. 開発サーバーを起動
-
 ```bash
 npm run dev
 ```
@@ -97,7 +95,6 @@ http://localhost:3000 でアプリケーションが起動します。
 - Ctrl+P (Mac: Cmd+P) でPDF保存
 
 ## CSVファイル形式
-
 ```csv
 chapter,japanese,english
 Chapter1,犬,dog

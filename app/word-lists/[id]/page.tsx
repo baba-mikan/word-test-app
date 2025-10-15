@@ -26,7 +26,7 @@ export default async function WordListDetailPage({
     .single()
 
   if (listError || !wordList) {
-    redirect('/dashboard')
+    redirect('/')
   }
 
   // 単語データを取得
@@ -37,7 +37,7 @@ export default async function WordListDetailPage({
     .order('chapter', { ascending: true })
 
   if (wordsError) {
-    redirect('/dashboard')
+    redirect('/')
   }
 
   return (
@@ -47,7 +47,7 @@ export default async function WordListDetailPage({
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-4">
               <Link 
-                href="/dashboard"
+                href="/"
                 className="text-blue-600 hover:text-blue-800 font-medium"
               >
                 ← ダッシュボードに戻る

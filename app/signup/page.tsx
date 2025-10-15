@@ -47,8 +47,8 @@ export default function SignUpPage() {
 
       // セッションが作成されたか確認
       if (data.session) {
-        // すぐにダッシュボードへリダイレクト
-        router.push('/dashboard')
+        // すぐにルートページへリダイレクト
+        router.push('/')
         router.refresh()
       } else {
         // メール確認が必要な場合
@@ -107,7 +107,7 @@ export default function SignUpPage() {
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-neutral-700 mb-2">
-              パスワード（6文字以上）
+              パスワード(6文字以上)
             </label>
             <input
               id="password"
@@ -122,7 +122,7 @@ export default function SignUpPage() {
 
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-neutral-700 mb-2">
-              パスワード（確認）
+              パスワード(確認)
             </label>
             <input
               id="confirmPassword"
