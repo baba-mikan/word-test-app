@@ -18,7 +18,8 @@ interface Props {
 function buildPages(
   items: Word[], 
   defaultChapter: string, 
-  shuffle: boolean
+  shuffle: boolean,
+  questionsPerPage: number
 ): Array<{ chapter: string; items: Word[] }> {
   if (!items || items.length === 0) return []
   
@@ -32,8 +33,8 @@ function buildPages(
   const out: Array<{ chapter: string; items: Word[] }> = []
   for (const [ch, arr] of groups.entries()) {
     const source = shuffle ? shuffleArray(arr) : arr
-    for (let i = 0; i < source.length; i += 12) {
-      out.push({ chapter: ch, items: source.slice(i, i + 12) })
+    for (let i = 0; i < source.length; i += questionsPerPage) {
+      out.push({ chapter: ch, items: source.slice(i, i + questionsPerPage) })
     }
   }
   return out
@@ -52,11 +53,13 @@ export default function WordTestPrint({ wordListId, wordListName, words }: Props
   const [title, setTitle] = useState(wordListName)
   const [defaultChapter, setDefaultChapter] = useState("")
   const [showAnswerKey, setShowAnswerKey] = useState(false)
+  const [showFourLines, setShowFourLines] = useState(true)
+  const [questionsPerPage, setQuestionsPerPage] = useState(12)
   const [shuffle, setShuffle] = useState(false)
 
   const pages = useMemo(
-    () => buildPages(words, defaultChapter, shuffle), 
-    [words, defaultChapter, shuffle]
+    () => buildPages(words, defaultChapter, shuffle, questionsPerPage), 
+    [words, defaultChapter, shuffle, questionsPerPage]
   )
 
   const handleDownloadHTML = () => {
@@ -65,7 +68,19 @@ export default function WordTestPrint({ wordListId, wordListName, words }: Props
       return
     }
 
-    // 元のWordTestA4.tsxと全く同じHTML生成ロジック
+    const fourLineStyle = showFourLines ? `
+    background-image: 
+      linear-gradient(to bottom, 
+        rgba(180,180,180,0.8) 0, rgba(180,180,180,0.8) 1px, transparent 1px, transparent 5mm),
+      linear-gradient(to bottom, 
+        transparent 5mm, rgba(180,180,180,0.8) 5mm, rgba(180,180,180,0.8) calc(5mm + 1px), transparent calc(5mm + 1px), transparent 10mm),
+      linear-gradient(to bottom,
+        transparent 10mm, rgba(0,0,0,0.8) 10mm, rgba(0,0,0,0.8) calc(10mm + 1px), transparent calc(10mm + 1px), transparent 15mm),
+      linear-gradient(to bottom,
+        transparent 15mm, rgba(180,180,180,0.8) 15mm, rgba(180,180,180,0.8) calc(15mm + 1px), transparent calc(15mm + 1px));
+    background-size: 100% 20mm;
+    background-repeat: no-repeat;` : ''
+
     const htmlContent = `<!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -104,6 +119,7 @@ export default function WordTestPrint({ wordListId, wordListName, words }: Props
   .page:last-child {
     page-break-after: auto;
   }
+
   .header {
     padding: 1rem;
   }
@@ -188,22 +204,12 @@ export default function WordTestPrint({ wordListId, wordListName, words }: Props
     border-radius: 0.75rem;
     position: relative;
     height: 18mm;
+    ${fourLineStyle}
   }
   .fourline-wrapper::before {
     content: "";
     position: absolute;
     inset: 0;
-    background-image: 
-      linear-gradient(to bottom, 
-        rgba(180,180,180,0.8) 0, rgba(180,180,180,0.8) 1px, transparent 1px, transparent 5mm),
-      linear-gradient(to bottom, 
-        transparent 5mm, rgba(180,180,180,0.8) 5mm, rgba(180,180,180,0.8) calc(5mm + 1px), transparent calc(5mm + 1px), transparent 10mm),
-      linear-gradient(to bottom,
-        transparent 10mm, rgba(0,0,0,0.8) 10mm, rgba(0,0,0,0.8) calc(10mm + 1px), transparent calc(10mm + 1px), transparent 15mm),
-      linear-gradient(to bottom,
-        transparent 15mm, rgba(180,180,180,0.8) 15mm, rgba(180,180,180,0.8) calc(15mm + 1px), transparent calc(15mm + 1px));
-    background-size: 100% 20mm;
-    background-repeat: no-repeat;
     border-radius: 6px;
   }
   .footer {
@@ -211,12 +217,23 @@ export default function WordTestPrint({ wordListId, wordListName, words }: Props
     font-size: 0.625rem;
     color: rgb(115, 115, 115);
   }
+  .no-print {
+    padding: 20px;
+    background: #f0f0f0;
+    margin-bottom: 20px;
+    text-align: center;
+  }
 </style>
 </head>
 <body>
+<div class="no-print">
+  <h2>英単語テストプリント</h2>
+  <p>このHTMLファイルを開いて、ブラウザの印刷機能（Ctrl+P または Cmd+P）でPDFとして保存してください。</p>
+  <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">印刷画面を開く</button>
+</div>
 ${pages.map(page => {
   const items = [...page.items];
-  while (items.length < 12) items.push({ id: '', chapter: '', japanese: '', english: '' });
+  while (items.length < questionsPerPage) items.push({ id: '', chapter: '', japanese: '', english: '' });
   
   return `<div class="page">
   <div class="header">
@@ -239,16 +256,21 @@ ${pages.map(page => {
   </div>
   <div class="body">
     <div class="questions-grid">
-      ${items.map((item, idx) => `<div class="question-row">
+      ${items.map((item, idx) => {
+        const isEmpty = !item.japanese && !item.english;
+        if (isEmpty) return '';
+        return `<div class="question-row">
         <div class="question-label">
-          <div class="question-number-text">（${idx + 1}）${item.japanese}</div>
-          ${showAnswerKey && item.english ? `<div class="answer-key">Answer: ${item.english}</div>` : ''}
+          <div class="question-number-text">（${idx + 1}）${item.japanese || ''}</div>
+          ${showAnswerKey && item.english ? 
+            `<div class="answer-key">Answer: ${item.english}</div>` : ''}
         </div>
         <div class="fourline-wrapper"></div>
-      </div>`).join('')}
+      </div>`;
+      }).join('')}
     </div>
   </div>
-  <div class="footer">※ 4線は小文字のアセンダー・ディセンダー位置の目安です。提出前につづり・大文字小文字を確認しましょう。</div>
+  <div class="footer">${showFourLines ? '※ 4線は小文字のアセンダー・ディセンダー位置の目安です。提出前につづり・大文字小文字を確認しましょう。' : ''}</div>
 </div>
 `}).join('')}
 </body>
@@ -272,7 +294,7 @@ ${pages.map(page => {
       <h2 className="text-2xl font-bold mb-6">プリント作成</h2>
 
       {/* 設定 */}
-      <div className="grid md:grid-cols-3 gap-4 mb-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-2">
             タイトル
@@ -295,17 +317,56 @@ ${pages.map(page => {
           />
         </div>
 
-        <div className="flex items-end">
-          <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showAnswerKey}
-              onChange={(e) => setShowAnswerKey(e.target.checked)}
-              className="rounded"
-            />
-            解答（英語）を小さく表示
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 mb-2">
+            1ページあたりの問題数（2〜20問）
           </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min="2"
+              max="20"
+              value={questionsPerPage}
+              onChange={(e) => setQuestionsPerPage(Number(e.target.value))}
+              className="flex-1"
+            />
+            <input
+              type="number"
+              min="2"
+              max="20"
+              value={questionsPerPage}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                if (val >= 2 && val <= 20) {
+                  setQuestionsPerPage(val);
+                }
+              }}
+              className="w-16 border border-neutral-300 rounded-lg px-2 py-1 text-center font-semibold"
+            />
+            <span className="text-sm text-neutral-600">問</span>
+          </div>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-4 mb-6">
+        <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showAnswerKey}
+            onChange={(e) => setShowAnswerKey(e.target.checked)}
+            className="rounded"
+          />
+          解答（英語）を小さく表示
+        </label>
+        <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showFourLines}
+            onChange={(e) => setShowFourLines(e.target.checked)}
+            className="rounded"
+          />
+          <span className="font-medium">4線を表示</span>
+        </label>
       </div>
 
       {/* ボタン */}
@@ -333,7 +394,9 @@ ${pages.map(page => {
       <div className="mt-6 p-4 bg-neutral-50 rounded-lg">
         <p className="text-sm text-neutral-600">
           <strong>単語数:</strong> {words.length}語 / 
-          <strong className="ml-2">ページ数:</strong> {pages.length}ページ
+          <strong className="ml-2">ページ数:</strong> {pages.length}ページ / 
+          <strong className="ml-2">問題数/ページ:</strong> {questionsPerPage}問 / 
+          <strong className="ml-2">4線表示:</strong> {showFourLines ? 'あり' : 'なし'}
         </p>
       </div>
     </div>
